@@ -22,6 +22,7 @@ import {toLatLngLiteral} from '../../libraries/lat-lng-utils';
 import {useMapCameraParams} from './use-map-camera-params';
 import {AuthFailureMessage} from './auth-failure-message';
 import {useMapInstance} from './use-map-instance';
+import {StaticMap} from './static-map';
 
 export interface GoogleMapsContextValue {
   map: google.maps.Map | null;
@@ -194,16 +195,24 @@ export const Map = (props: PropsWithChildren<MapProps>) => {
 
   return (
     <div
-      ref={mapRef}
-      data-testid={'map'}
-      style={className ? undefined : combinedStyle}
-      className={className}
-      {...(id ? {id} : {})}>
-      {map ? (
-        <GoogleMapsContext.Provider value={contextValue}>
-          {children}
-        </GoogleMapsContext.Provider>
-      ) : null}
+      style={{width: '100%', height: '100%', cursor: 'pointer'}}
+      onClick={() => context.setMapSelected(true)}>
+      {context.mapSelected ? (
+        <div
+          ref={mapRef}
+          style={className ? undefined : combinedStyle}
+          data-testid={'map'}
+          className={className}
+          {...(id ? {id} : {})}>
+          {map ? (
+            <GoogleMapsContext.Provider value={contextValue}>
+              {children}
+            </GoogleMapsContext.Provider>
+          ) : null}
+        </div>
+      ) : (
+        <StaticMap {...props} />
+      )}
     </div>
   );
 };

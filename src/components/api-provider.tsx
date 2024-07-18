@@ -26,6 +26,8 @@ export interface APIProviderContextValue {
   addMapInstance: (map: google.maps.Map, id?: string) => void;
   removeMapInstance: (id?: string) => void;
   clearMapInstances: () => void;
+  mapSelected: boolean;
+  setMapSelected: (arg: boolean) => void;
 }
 
 const DEFAULT_SOLUTION_CHANNEL = 'GMP_visgl_rgmlibrary_v1_default';
@@ -109,7 +111,7 @@ function useMapInstances() {
  * local hook to handle the loading of the maps API, returns the current loading status
  * @param props
  */
-function useGoogleMapsApiLoader(props: APIProviderProps) {
+function useGoogleMapsApiLoader(props: APIProviderProps, mapSelected: boolean) {
   const {onLoad, apiKey, version, libraries = [], ...otherApiParams} = props;
 
   const [status, setStatus] = useState<APILoadingStatus>(
@@ -155,6 +157,8 @@ function useGoogleMapsApiLoader(props: APIProviderProps) {
   useEffect(
     () => {
       (async () => {
+        if (!mapSelected) return; // Only fetch libraries after map is selected
+
         try {
           const params: ApiParams = {key: apiKey, ...otherApiParams};
           if (version) params.v = version;
@@ -182,7 +186,7 @@ function useGoogleMapsApiLoader(props: APIProviderProps) {
       })();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [apiKey, librariesString, serializedParams]
+    [apiKey, librariesString, serializedParams, mapSelected]
   );
 
   return {
@@ -199,11 +203,14 @@ export const APIProvider = (
   props: PropsWithChildren<APIProviderProps>
 ): ReactElement | null => {
   const {children, ...loaderProps} = props;
+  const [mapSelected, setMapSelected] = useState(false);
   const {mapInstances, addMapInstance, removeMapInstance, clearMapInstances} =
     useMapInstances();
 
-  const {status, loadedLibraries, importLibrary} =
-    useGoogleMapsApiLoader(loaderProps);
+  const {status, loadedLibraries, importLibrary} = useGoogleMapsApiLoader(
+    loaderProps,
+    mapSelected
+  );
 
   const contextValue: APIProviderContextValue = useMemo(
     () => ({
@@ -213,7 +220,10 @@ export const APIProvider = (
       clearMapInstances,
       status,
       loadedLibraries,
-      importLibrary
+      importLibrary,
+      apiKey: loaderProps.apiKey,
+      mapSelected,
+      setMapSelected
     }),
     [
       mapInstances,
@@ -222,7 +232,10 @@ export const APIProvider = (
       clearMapInstances,
       status,
       loadedLibraries,
-      importLibrary
+      importLibrary,
+      loaderProps.apiKey,
+      mapSelected,
+      setMapSelected
     ]
   );
 
